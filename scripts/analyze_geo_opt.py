@@ -4,7 +4,8 @@ individual CSV files (one per symprec value) in a model's directory.
 Output files will have the same name as the input file containing the model's relaxed
 structures, but with the symprec value appended to the filename.
 
-Note: StructureMatcher is configured with stol=1.0 and scale=False for exact matching.
+Note: StructureMatcher is configured with stol=1.0 and scale=False for exact matching,
+and ltol=0.4, angle_tol=15 so distorted cells still match (see structure/symmetry.py).
 RMSD values are normalized (unitless) and NaN values are filled with 1.0 (the stol
 value) to properly account for structures that couldn't be matched.
 

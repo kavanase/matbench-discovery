@@ -2,7 +2,7 @@
 
 import pandas as pd
 import pytest
-from pymatgen.core import Structure
+from pymatgen.core import Lattice, Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatviz.enums import Key
 
@@ -75,6 +75,35 @@ def test_pred_vs_ref_struct_symmetry(tetragonal_struct: Structure) -> None:
         Key.symprec,
         Key.angle_tolerance,
     }
+
+
+@pytest.mark.parametrize(
+    ("c_scale", "gamma_shift", "matched"),
+    [(1.3, 0, True), (1, 10, True), (1.45, 0, False), (1, 20, False)],
+)
+def test_pred_vs_ref_struct_symmetry_lattice_tolerances(
+    tetragonal_struct: Structure, c_scale: float, gamma_shift: float, matched: bool
+) -> None:
+    """Cells within ltol=0.4 / angle_tol=15° of DFT match, larger distortions don't."""
+    a, b, c = tetragonal_struct.lattice.abc
+    alpha, beta, gamma = tetragonal_struct.lattice.angles
+    lattice = Lattice.from_parameters(
+        a, b, c * c_scale, alpha, beta, gamma + gamma_shift
+    )
+    pred_struct = Structure(
+        lattice, tetragonal_struct.species, tetragonal_struct.frac_coords
+    )
+    df_sym = symmetry.get_sym_info_from_structs({"key": tetragonal_struct})
+
+    df_compared = symmetry.pred_vs_ref_struct_symmetry(
+        df_sym, df_sym, {"key": pred_struct}, {"key": tetragonal_struct}
+    )
+
+    rmsd = df_compared[MbdKey.structure_rmsd_vs_dft].iloc[0]
+    if matched:  # RMSD measures site displacements only, so pure strain gives ~0
+        assert rmsd == pytest.approx(0, abs=1e-8)
+    else:  # calc_geo_opt_metrics fills unmatched NaN RMSDs with 1.0
+        assert pd.isna(rmsd)
 
 
 @pytest.mark.parametrize("cell", ["supercell", "primitive"])
