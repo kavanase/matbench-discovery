@@ -119,9 +119,12 @@ def pred_vs_ref_struct_symmetry(
 
     # scale=False and stol=1 are important for getting accurate distance of atomic
     # positions from DFT-relaxed positions. details in https://github.com/janosh/matbench-discovery/issues/230
-    # ltol/angle_tol bound the lattice mappings searched. 2x/3x pymatgen's
-    # defaults (0.2/5°) so distorted cells still get a real, representative RMSD:
-    structure_matcher = StructureMatcher(ltol=0.4, stol=1.0, angle_tol=15, scale=False)
+    # angle_tol=10 (pymatgen default 5) and attempt_supercell=True also match cells with
+    # angles up to 10° off DFT's and primitive cells that changed size, which would
+    # otherwise get the 1.0 fill. ltol stays at its 0.2 default.
+    structure_matcher = StructureMatcher(
+        stol=1.0, scale=False, angle_tol=10, attempt_supercell=True
+    )
     ref_ids, pred_ids = set(ref_structs), set(pred_structs)
     shared_ids = ref_ids & pred_ids
     if len(shared_ids) == 0:

@@ -79,12 +79,12 @@ def test_pred_vs_ref_struct_symmetry(tetragonal_struct: Structure) -> None:
 
 @pytest.mark.parametrize(
     ("c_scale", "gamma_shift", "matched"),
-    [(1.3, 0, True), (1, 10, True), (1.45, 0, False), (1, 20, False)],
+    [(1.15, 0, True), (1.25, 0, False), (1, 8, True), (1, 12, False)],
 )
 def test_pred_vs_ref_struct_symmetry_lattice_tolerances(
     tetragonal_struct: Structure, c_scale: float, gamma_shift: float, matched: bool
 ) -> None:
-    """Cells within ltol=0.4 / angle_tol=15° of DFT match, larger distortions don't."""
+    """Cells within ltol=0.2 / angle_tol=10° of DFT match, larger distortions don't."""
     a, b, c = tetragonal_struct.lattice.abc
     alpha, beta, gamma = tetragonal_struct.lattice.angles
     lattice = Lattice.from_parameters(
@@ -104,6 +104,29 @@ def test_pred_vs_ref_struct_symmetry_lattice_tolerances(
         assert rmsd == pytest.approx(0, abs=1e-8)
     else:  # calc_geo_opt_metrics fills unmatched NaN RMSDs with 1.0
         assert pd.isna(rmsd)
+
+
+def test_pred_vs_ref_struct_symmetry_primitive_cell_size_change(
+    tetragonal_struct: Structure,
+) -> None:
+    """ML and DFT primitive cells of different size match via attempt_supercell."""
+    dft_struct = tetragonal_struct * (2, 1, 1)
+    pred_struct = dft_struct.copy()
+    # a 0.3 Å shift exceeds get_primitive_structure's 0.25 Å tolerance, so the ML
+    # primitive cell keeps all 6 sites while DFT's reduces to 3
+    shift = 0.3
+    pred_struct.translate_sites([0], [shift, 0, 0], frac_coords=False)
+    df_sym = symmetry.get_sym_info_from_structs({"key": dft_struct})
+
+    df_compared = symmetry.pred_vs_ref_struct_symmetry(
+        df_sym, df_sym, {"key": pred_struct}, {"key": dft_struct}
+    )
+
+    # full-cell RMSD of one of 6 sites displaced by shift (mean displacement removed)
+    vol_per_site = dft_struct.volume / len(dft_struct)
+    expected = shift * 5**0.5 / 6 / vol_per_site ** (1 / 3)
+    rmsd = df_compared[MbdKey.structure_rmsd_vs_dft].iloc[0]
+    assert rmsd == pytest.approx(expected)
 
 
 @pytest.mark.parametrize("cell", ["supercell", "primitive"])
