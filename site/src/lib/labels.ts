@@ -13,7 +13,8 @@ import type {
   MetadataLabels,
 } from './schema/label.js'
 
-export const RMSD_BASELINE = 0.15 // Baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
+// Baseline for poor performance given the worst performing model is M3GNet with ~0.075:
+export const RMSD_BASELINE = 0.1
 
 // Default CMDS/CDS weights and the CDS element roster size live here (not in
 // combined-scores, which imports this module) so score descriptions can quote them.

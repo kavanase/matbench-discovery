@@ -132,7 +132,7 @@ describe(`calculate_cps`, () => {
     { name: `F1 perfect`, value: 1.0, weights: [1, 0, 0], expected: 1.0 },
     { name: `RMSD perfect`, value: 0, weights: [0, 1, 0], expected: 1.0 },
     { name: `RMSD worst`, value: RMSD_BASELINE, weights: [0, 1, 0], expected: 0.0 },
-    { name: `RMSD linear`, value: 0.03, weights: [0, 1, 0], expected: 0.8 },
+    { name: `RMSD linear`, value: RMSD_BASELINE / 5, weights: [0, 1, 0], expected: 0.8 },
     {
       name: `RMSD midpoint`,
       value: RMSD_BASELINE / 2,
